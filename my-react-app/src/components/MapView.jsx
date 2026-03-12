@@ -1,48 +1,44 @@
-import { GoogleMap, Marker, useJsApiLoader } from "@react-google-maps/api";
+import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import { useEffect, useState } from "react";
 import { db } from "../firebase";
 import { ref, onValue } from "firebase/database";
-import { useEffect, useState } from "react";
 
-function MapView({bus}){
+function MapView({ bus }) {
 
- const [location,setLocation]=useState(null);
+  const [location, setLocation] = useState(null);
 
- const { isLoaded } = useJsApiLoader({
-   googleMapsApiKey: "YOUR_GOOGLE_MAP_KEY"
- });
+  useEffect(() => {
 
- useEffect(()=>{
+    const busRef = ref(db, "buses/" + bus);
 
-   const busRef = ref(db,"buses/"+bus);
+    onValue(busRef, (snapshot) => {
+      setLocation(snapshot.val());
+    });
 
-   onValue(busRef,(snapshot)=>{
+  }, [bus]);
 
-     setLocation(snapshot.val());
+  const center = location
+    ? [location.latitude, location.longitude]
+    : [11.0168, 76.9558]; // Coimbatore default
 
-   });
+  return (
 
- },[bus]);
+    <MapContainer center={center} zoom={15} style={{ height: "400px", width: "100%" }}>
 
- if(!isLoaded) return <div>Loading map...</div>;
+      <TileLayer
+        attribution='&copy; OpenStreetMap contributors'
+        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+      />
 
- return(
+      {location && (
+        <Marker position={[location.latitude, location.longitude]}>
+          <Popup>Bus Location</Popup>
+        </Marker>
+      )}
 
-   <GoogleMap
-     zoom={15}
-     center={location || {lat:11.0168,lng:76.9558}}
-     mapContainerStyle={{width:"100%",height:"400px"}}
-   >
+    </MapContainer>
 
-     {location && (
-       <Marker position={{
-         lat:location.latitude,
-         lng:location.longitude
-       }}/>
-     )}
-
-   </GoogleMap>
-
- );
+  );
 
 }
 
